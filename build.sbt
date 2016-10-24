@@ -2,12 +2,12 @@ import sbtunidoc.Plugin.UnidocKeys._
 import ReleaseTransformations._
 import com.typesafe.sbt.SbtGhPages.GhPagesKeys._
 import com.typesafe.sbt.SbtSite.SiteKeys._
-import scala.xml.transform.{ RewriteRule, RuleTransformer }
+
+val scalaVersions = Seq("2.10.6", "2.11.8", "2.12.0-RC2")
 
 lazy val buildSettings = Seq(
   organization := "io.circe",
-  scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.10.6", "2.11.8")
+  scalaVersion := "2.11.8"
 )
 
 lazy val compilerOptions = Seq(
@@ -37,7 +37,7 @@ lazy val previousCirceVersion = "0.5.2"
 lazy val baseSettings = Seq(
   scalacOptions ++= compilerOptions ++ (
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 11)) => Seq("-Ywarn-unused-import")
+      case Some((2, p)) if p >= 11 => Seq("-Ywarn-unused-import")
       case _ => Nil
     }
   ),
@@ -70,7 +70,6 @@ lazy val allSettings = buildSettings ++ baseSettings ++ publishSettings
  * circe-generic on 2.10, since Unidoc doesn't like its macros.
  */
 def noDocProjects(sv: String): Seq[ProjectReference] = Seq[ProjectReference](
-  benchmark,
   coreJS,
   hygiene,
   java8,
@@ -129,10 +128,10 @@ lazy val aggregatedProjects: Seq[ProjectReference] = Seq[ProjectReference](
   jackson,
   optics, opticsJS,
   scalajs,
-  spray,
   streaming,
-  benchmark,
-  docs
+  docs,
+  spray,
+  benchmark
 ) ++ (
   if (sys.props("java.specification.version") == "1.8") Seq[ProjectReference](java8) else Nil
 )
@@ -155,6 +154,7 @@ lazy val macroDependencies: Seq[Setting[_]] = Seq(
 )
 
 lazy val circe = project.in(file("."))
+  .enablePlugins(CrossPerProjectPlugin)
   .settings(allSettings)
   .settings(noPublishSettings)
   .settings(
@@ -176,7 +176,8 @@ lazy val numbersBase = crossProject.in(file("modules/numbers"))
   .settings(
     description := "circe numbers",
     moduleName := "circe-numbers",
-    name := "numbers"
+    name := "numbers",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(
@@ -198,7 +199,8 @@ lazy val coreBase = crossProject.in(file("modules/core"))
   .settings(
     description := "circe core",
     moduleName := "circe-core",
-    name := "core"
+    name := "core",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(
@@ -221,7 +223,8 @@ lazy val genericBase = crossProject.in(file("modules/generic"))
   .settings(
     description := "circe generic",
     moduleName := "circe-generic",
-    name := "generic"
+    name := "generic",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(macroDependencies: _*)
@@ -248,7 +251,8 @@ lazy val literalBase = crossProject.crossType(CrossType.Pure).in(file("modules/l
   .settings(
     description := "circe literal",
     moduleName := "circe-literal",
-    name := "literal"
+    name := "literal",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(macroDependencies: _*)
@@ -274,7 +278,8 @@ lazy val refinedBase = crossProject.in(file("modules/refined"))
   .settings(
     description := "circe refined",
     moduleName := "circe-refined",
-    name := "refined"
+    name := "refined",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(
@@ -294,7 +299,8 @@ lazy val parserBase = crossProject.in(file("modules/parser"))
   .settings(
     description := "circe parser",
     moduleName := "circe-parser",
-    name := "parser"
+    name := "parser",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .jvmSettings(
@@ -310,7 +316,8 @@ lazy val parserJS = parserBase.js
 lazy val scalajs = project.in(file("modules/scalajs"))
   .settings(
     description := "circe scalajs",
-    moduleName := "circe-scalajs"
+    moduleName := "circe-scalajs",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings)
   .enablePlugins(ScalaJSPlugin)
@@ -320,11 +327,12 @@ lazy val scodecBase = crossProject.in(file("modules/scodec"))
   .settings(
     description := "circe scodec",
     moduleName := "circe-scodec",
-    name := "scodec"
+    name := "scodec",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(
-    libraryDependencies += "org.scodec" %%% "scodec-bits" % "1.1.0"
+    libraryDependencies += "org.scodec" %%% "scodec-bits" % "1.1.2"
   )
   .jvmSettings(
     mimaPreviousArtifacts := Set("io.circe" %% "circe-scodec" % previousCirceVersion)
@@ -340,7 +348,8 @@ lazy val testingBase = crossProject.in(file("modules/testing"))
   .settings(
     description := "circe testing",
     moduleName := "circe-testing",
-    name := "testing"
+    name := "testing",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(
@@ -362,7 +371,8 @@ lazy val testsBase = crossProject.in(file("modules/tests"))
   .settings(
     description := "circe tests",
     moduleName := "circe-tests",
-    name := "tests"
+    name := "tests",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(noPublishSettings: _*)
@@ -407,7 +417,8 @@ lazy val testsJS = testsBase.js
 lazy val hygiene = project.in(file("modules/hygiene"))
   .settings(
     description := "circe hygiene",
-    moduleName := "circe-hygiene"
+    moduleName := "circe-hygiene",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings ++ noPublishSettings)
   .settings(
@@ -418,7 +429,8 @@ lazy val hygiene = project.in(file("modules/hygiene"))
 lazy val jawn = project.in(file("modules/jawn"))
   .settings(
     description := "circe jawn",
-    moduleName := "circe-jawn"
+    moduleName := "circe-jawn",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings)
   .settings(
@@ -430,7 +442,8 @@ lazy val jawn = project.in(file("modules/jawn"))
 lazy val java8 = project.in(file("modules/java8"))
   .settings(
     description := "circe java8",
-    moduleName := "circe-java8"
+    moduleName := "circe-java8",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings)
   .settings(
@@ -441,11 +454,12 @@ lazy val java8 = project.in(file("modules/java8"))
 lazy val streaming = project.in(file("modules/streaming"))
   .settings(
     description := "circe streaming",
-    moduleName := "circe-streaming"
+    moduleName := "circe-streaming",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings)
   .settings(
-    libraryDependencies += "io.iteratee" %% "iteratee-core" % "0.6.1",
+    libraryDependencies += "io.iteratee" %% "iteratee-core" % "0.7.0-SNAPSHOT",
     mimaPreviousArtifacts := Set("io.circe" %% "circe-streaming" % previousCirceVersion)
   )
   .dependsOn(core, jawn)
@@ -453,7 +467,8 @@ lazy val streaming = project.in(file("modules/streaming"))
 lazy val jackson = project.in(file("modules/jackson"))
   .settings(
     description := "circe jackson",
-    moduleName := "circe-jackson"
+    moduleName := "circe-jackson",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings)
   .settings(
@@ -468,7 +483,8 @@ lazy val jackson = project.in(file("modules/jackson"))
 lazy val spray = project.in(file("modules/spray"))
   .settings(
     description := "circe spray",
-    moduleName := "circe-spray"
+    moduleName := "circe-spray",
+    crossScalaVersions := scalaVersions.init
   )
   .settings(allSettings)
   .settings(
@@ -495,13 +511,14 @@ lazy val spray = project.in(file("modules/spray"))
 lazy val opticsBase = crossProject.crossType(CrossType.Pure).in(file("modules/optics"))
   .settings(
     description := "circe optics",
-    moduleName := "circe-optics"
+    moduleName := "circe-optics",
+    crossScalaVersions := scalaVersions
   )
   .settings(allSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.julien-truffaut" %%% "monocle-core" % "1.3.0",
-      "com.github.julien-truffaut" %%% "monocle-law" % "1.3.0" % "test",
+      "com.github.julien-truffaut" %%% "monocle-core" % "1.3.1",
+      "com.github.julien-truffaut" %%% "monocle-law" % "1.3.1" % "test",
       compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
     )
   )
@@ -516,7 +533,8 @@ lazy val opticsJS = opticsBase.js
 lazy val benchmark = project.in(file("modules/benchmark"))
   .settings(
     description := "circe benchmark",
-    moduleName := "circe-benchmark"
+    moduleName := "circe-benchmark",
+    crossScalaVersions := scalaVersions.init
   )
   .settings(allSettings)
   .settings(noPublishSettings)
@@ -533,18 +551,6 @@ lazy val benchmark = project.in(file("modules/benchmark"))
   )
   .enablePlugins(JmhPlugin)
   .dependsOn(core, generic, jawn, jackson)
-
-val removeScoverage = new RuleTransformer(
-  new RewriteRule {
-    private[this] def isGroupScoverage(child: xml.Node): Boolean =
-      child.label == "groupId" && child.text == "org.scoverage"
-
-    override def transform(node: xml.Node): Seq[xml.Node] = node match {
-      case e: xml.Elem if e.label == "dependency" && e.child.exists(isGroupScoverage) => Nil
-      case _ => Seq(node)
-    }
-  }
-)
 
 lazy val publishSettings = Seq(
   releaseCrossBuild := true,
@@ -577,8 +583,7 @@ lazy val publishSettings = Seq(
         <url>https://twitter.com/travisbrown</url>
       </developer>
     </developers>
-  ),
-  pomPostProcess := { (node: xml.Node) => removeScoverage.transform(node).head }
+  )
 )
 
 lazy val noPublishSettings = Seq(
@@ -625,9 +630,7 @@ val jvmProjects = Seq(
   "scodec",
   "tests",
   "jawn",
-  "jackson",
-  "spray",
-  "benchmark"
+  "jackson"
 ) ++ (
   if (sys.props("java.specification.version") == "1.8") Seq("java8") else Nil
 )
@@ -635,9 +638,7 @@ val jvmProjects = Seq(
 val jvmTestProjects = Seq(
   "numbers",
   "tests",
-  "optics",
-  "spray",
-  "benchmark"
+  "optics"
 ) ++ (
   if (sys.props("java.specification.version") == "1.8") Seq("java8") else Nil
 )
